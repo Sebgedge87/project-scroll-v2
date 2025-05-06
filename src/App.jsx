@@ -17,6 +17,8 @@ import { useParams } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./firebase/config";
 import { useAuth } from "./AuthContext";
+import { where } from "firebase/firestore"
+
 
 function App() {
   return (
@@ -37,6 +39,8 @@ function DashboardPage() {
   const [games, setGames] = useState([]);
   const { user, loading } = useAuth();
 
+
+
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, 'test@email.com', 'password123')
@@ -47,7 +51,13 @@ function DashboardPage() {
   }
 
   useEffect(() => {
-    const q = query(collection(db, "games"), orderBy("createdAt", "desc"));
+    if (!user) return;
+
+    const q = query(
+      collection(db, "games"),
+      where("gmId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    )
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const gamesData = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -57,7 +67,7 @@ function DashboardPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
