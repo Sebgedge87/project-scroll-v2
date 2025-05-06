@@ -17,8 +17,7 @@ import { useParams } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./firebase/config";
 import { useAuth } from "./AuthContext";
-import { where } from "firebase/firestore"
-
+import { where } from "firebase/firestore";
 
 function App() {
   return (
@@ -39,16 +38,14 @@ function DashboardPage() {
   const [games, setGames] = useState([]);
   const { user, loading } = useAuth();
 
-
-
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, 'test@email.com', 'password123')
-      alert('Logged in!')
+      await signInWithEmailAndPassword(auth, "test@email.com", "password123");
+      alert("Logged in!");
     } catch (err) {
-      console.error('Login error:', err.message)
+      console.error("Login error:", err.message);
     }
-  }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -57,7 +54,7 @@ function DashboardPage() {
       collection(db, "games"),
       where("gmId", "==", user.uid),
       orderBy("createdAt", "desc")
-    )
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const gamesData = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -114,16 +111,22 @@ function DashboardPage() {
     <div className="space-y-4">
       <h1 className="text-3xl font-bold">📋 Dashboard – List of Games</h1>
       {!user && (
-  <button
-    onClick={handleLogin}
-    className="px-4 py-2 bg-green-600 rounded hover:bg-green-700"
-  >
-    Log in as test@email.com
-  </button>
-)}
-{user && (
-  <p className="text-sm text-green-400">Logged in as {user.email}</p>
-)}
+        <button
+          onClick={handleLogin}
+          className="px-4 py-2 bg-green-600 rounded hover:bg-green-700"
+        >
+          Log in as test@email.com
+        </button>
+      )}
+      {user && (
+        <p className="text-sm text-green-400">Logged in as {user.email}</p>
+      )}
+      {user && (
+        <div className="space-y-2 max-w-md">
+          <h2 className="text-xl font-semibold">🎟️ Join Game by Code</h2>
+          <JoinGameForm />
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-2 max-w-md">
         <input
           className="w-full p-2 rounded bg-gray-800 text-white"
@@ -243,6 +246,57 @@ function GamePage() {
       </ul>
     </div>
   );
+}
+function JoinGameForm() {
+  const [gameCode, setGameCode] = useState('')
+  const [message, setMessage] = useState('')
+  const { user } = useAuth()
+
+  const handleJoin = async (e) => {
+    e.preventDefault()
+    setMessage('')
+
+    try {
+      const gameRef = doc(db, 'games', gameCode)
+      const gameSnap = await getDoc(gameRef)
+
+      if (!gameSnap.exists()) {
+        setMessage('❌ Game not found.')
+        return
+      }
+
+      const memberRef = doc(db, 'games', gameCode, 'members', user.uid)
+      await setDoc(memberRef, {
+        joinedAt: serverTimestamp(),
+        role: 'player'
+      })
+
+      setMessage('✅ Successfully joined the game!')
+      setGameCode('')
+    } catch (err) {
+      console.error('Join error:', err)
+      setMessage('❌ Failed to join game.')
+    }
+  }
+
+  return (
+    <form onSubmit={handleJoin} className="space-y-2">
+      <input
+        type="text"
+        className="w-full p-2 rounded bg-gray-800 text-white"
+        placeholder="Enter Game ID"
+        value={gameCode}
+        onChange={(e) => setGameCode(e.target.value)}
+      />
+      <button
+        type="submit"
+        className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-700"
+      >
+        Join Game
+      </button>
+      {message && <p className="text-sm text-gray-400">{message}</p>}
+    </form>
+  )
 }
 
 export default App;
