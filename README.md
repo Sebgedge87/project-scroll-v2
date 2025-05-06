@@ -62,7 +62,7 @@
 
 ## 🚧 Next Goals (choose one)
 
-- [ ] List games on the dashboard  
+- [x] List games on the dashboard  
 - [ ] Build `/games/:gameId/sessions` view  
 - [ ] Add Firebase Auth (replace `temp-user-123`)  
 - [ ] Add game members subcollection on join

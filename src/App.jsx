@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { db } from "./firebase/config";
 import {
   addDoc,
+  getDoc,
   collection,
   serverTimestamp,
   setDoc,
@@ -11,6 +12,10 @@ import {
   orderBy,
   onSnapshot
 } from "firebase/firestore";
+import { Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+
+
 
 function App() {
   return (
@@ -130,10 +135,15 @@ function DashboardPage() {
 
 <ul className="space-y-2">
   {games.map(game => (
-    <li key={game.id} className="p-4 bg-gray-800 rounded shadow hover:bg-gray-700 transition-all">
+   <li key={game.id}>
+   <Link
+     to={`/games/${game.id}`}
+     className="block p-4 bg-gray-800 rounded shadow hover:bg-gray-700 transition-all"
+   >
       <h3 className="text-xl font-bold">{game.title}</h3>
       <p className="text-sm text-gray-300">System: {game.system}</p>
       <p className="text-sm text-gray-400">Session: {game.sessionDay} @ {game.sessionTime}</p>
+      </Link>
     </li>
   ))}
 </ul>
@@ -144,7 +154,34 @@ function DashboardPage() {
 }
 
 function GamePage() {
-  return <h1 className="text-3xl font-bold">🎲 Game Page (/:gameId)</h1>;
+  const { gameId } = useParams()
+  const [game, setGame] = useState(null)
+
+  useEffect(() => {
+    const fetchGame = async () => {
+      const ref = doc(db, 'games', gameId)
+      const snap = await getDoc(ref)
+      if (snap.exists()) {
+        setGame({ id: snap.id, ...snap.data() })
+      } else {
+        console.warn('Game not found')
+      }
+    }
+
+    fetchGame()
+  }, [gameId])
+
+  if (!game) return <p className="text-gray-400">Loading game...</p>
+
+  return (
+    <div className="space-y-2">
+      <h1 className="text-3xl font-bold">{game.title}</h1>
+      <p className="text-gray-300">System: {game.system}</p>
+      <p className="text-gray-400">Session day: {game.sessionDay} at {game.sessionTime}</p>
+      <p className="text-sm text-gray-500">Game ID: {game.id}</p>
+    </div>
+  )
 }
+
 
 export default App;
