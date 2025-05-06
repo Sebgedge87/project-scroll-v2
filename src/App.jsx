@@ -1,8 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-
 import DashboardPage from "./pages/DashboardPage"
-import GamePage from "./pages/GamePage"
-
+import GamePage from './app/games/[gameId]/index.jsx'
 
 
 function App() {

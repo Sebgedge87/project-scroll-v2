@@ -1,71 +1,88 @@
-# ✅ Week 1 – Project Scroll V2: Foundation & Scaffolding
+## ⚙️ Developer Guidelines for AI Support
 
-> 🎯 **Goal:** Set up a clean, scalable base for a multi-user TTRPG app using Firebase, React, and Tailwind.  
-> Focus on routing, Firestore structure, MVP game/session creation, and placeholder auth.
+- Keep code modular and scoped
+- Avoid scope creep unless it fixes a bug or adds core functionality
+- Follow roadmap week-by-week
+- Pages go in `src/pages/`
+- Components go in `src/components/`
+- Firebase Auth + Firestore are primary stack
+- Tailwind for styling (dark UI theme)
+- Minimise premature abstraction — refactor only when patterns emerge
+- React Router v6 syntax
+
+## 📅 Project Scroll – Weekly Development Roadmap
+---
+
+## ✅ Week One: Foundation & Scaffolding
+
+### 🧱 Setup & Core Features
+
+- [x] Scaffold project with Vite + React + Tailwind
+- [x] Initialise Git and GitHub repo
+- [x] Set up Firebase (Auth + Firestore)
+- [x] Implement routing with React Router
+- [x] Create Dashboard and GamePage structure
+
+### 🔐 Authentication
+
+- [x] Enable Firebase Email/Password Auth
+- [x] Add login with hardcoded user (test@email.com)
+- [x] Track current user globally via AuthContext
+- [x] Save gmId when creating a game
+
+### 🎮 Game Creation Flow
+
+- [x] Create game with title, system, session day/time
+- [x] Auto-create Session 1 under each game
+- [x] List all games created by current user
+- [x] Navigate to `/games/:gameId`
+
+### 🧭 Game Data View
+
+- [x] Fetch game details on GamePage
+- [x] List sessions under each game
+- [x] Display session names and dates
+
+### 👥 Multiplayer Prep
+
+- [x] Add “Join Game by Code” form
+- [x] Create `members/{userId}` under game
+- [x] Assign role: 'player'
+- [x] Fetch and display all games where user is GM or player
+
+### 🧹 Cleanup & Structure
+
+- [x] Move `DashboardPage` to `src/pages/`
+- [x] Move `JoinGameForm` to `src/components/`
+- [x] Move `GamePage` to `src/pages/`
 
 ---
 
-## 🧱 Project Setup
+## ⏳ Week Two: User Access & Roles (Preview)
 
-- [x] Scaffold new project with **Vite + React + Tailwind**
-- [x] Initialise Git and push to **GitHub**
-- [x] Set up file structure and remove boilerplate
-
----
-
-## 🔄 Routing
-
-- [x] Install and configure **React Router**
-- [x] Add clean base routes:
-  - `/dashboard` → Game list and creation
-  - `/games/:gameId` → Single game page
-- [x] Redirect `/` to `/dashboard`
+- [ ] Build SessionsPage and /sessions/:sessionId route
+- [ ] Add role-based access: GM vs Player
+- [ ] Restrict create/edit features to GM only
+- [ ] Add real logout and register flow
+- [ ] Filter shared resources (notes, inventory) by permissions
+- [ ] Show player name in member list
 
 ---
 
-## 🔥 Firebase Integration
+## 🔮 Week Three (Planned)
 
-- [x] Create Firebase project
-- [x] Enable **Firestore**
-- [x] Enable **Email/Password Auth**
-- [x] Install Firebase SDK
-- [x] Connect Firebase config to app
-- [x] Create `firebase/config.js`
-- [x] Test Firestore read with `getDocs()`
-- [x] Enable **test rules** for development access
+- [ ] Add shared inventory system
+- [ ] Add rich text notes (TipTap or Markdown)
+- [ ] Support per-session notes
+- [ ] Add session creation UI
+- [ ] Introduce campaign settings and editing
 
 ---
 
-## 🎮 Game Creation Flow
+## 📌 Future Enhancements
 
-- [x] Create form to enter:
-  - Game Title
-  - System (e.g. 5e)
-  - Session Day
-  - Session Time
-- [x] On submit:
-  - Add new doc to `games/` collection
-  - Include `gmId: 'temp-user-123'` (placeholder)
-- [x] Automatically create first session:
-  - Path: `games/{gameId}/sessions/session-1`
-  - Fields: `name`, `date`, `createdBy`, `noteCount: 0`
-
----
-
-## 🧠 Current State
-
-- ✅ Firestore is writing correctly
-- ✅ Auto-session creation is working
-- ✅ Structure matches long-term scalable design
-
----
-
-## 🚧 Next Goals (choose one)
-
-- [x] List games on the dashboard  
-- [x] Build `/games/:gameId/sessions` view  
-- [x] Add Firebase Auth (replace `temp-user-123`)  
-- [ ] Add game members subcollection on join
-
----
-
+- [ ] Realtime collaborative editing
+- [ ] Puzzle generators, thieves’ cant, NPCs
+- [ ] User profiles and avatars
+- [ ] Game invite links with token
+- [ ] Role-based dashboards
