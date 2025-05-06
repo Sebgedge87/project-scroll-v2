@@ -1,12 +1,71 @@
-# React + Vite
+# ✅ Week 1 – Project Scroll V2: Foundation & Scaffolding
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 🎯 **Goal:** Set up a clean, scalable base for a multi-user TTRPG app using Firebase, React, and Tailwind.  
+> Focus on routing, Firestore structure, MVP game/session creation, and placeholder auth.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🧱 Project Setup
 
-## Expanding the ESLint configuration
+- [x] Scaffold new project with **Vite + React + Tailwind**
+- [x] Initialise Git and push to **GitHub**
+- [x] Set up file structure and remove boilerplate
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🔄 Routing
+
+- [x] Install and configure **React Router**
+- [x] Add clean base routes:
+  - `/dashboard` → Game list and creation
+  - `/games/:gameId` → Single game page
+- [x] Redirect `/` to `/dashboard`
+
+---
+
+## 🔥 Firebase Integration
+
+- [x] Create Firebase project
+- [x] Enable **Firestore**
+- [x] Enable **Email/Password Auth**
+- [x] Install Firebase SDK
+- [x] Connect Firebase config to app
+- [x] Create `firebase/config.js`
+- [x] Test Firestore read with `getDocs()`
+- [x] Enable **test rules** for development access
+
+---
+
+## 🎮 Game Creation Flow
+
+- [x] Create form to enter:
+  - Game Title
+  - System (e.g. 5e)
+  - Session Day
+  - Session Time
+- [x] On submit:
+  - Add new doc to `games/` collection
+  - Include `gmId: 'temp-user-123'` (placeholder)
+- [x] Automatically create first session:
+  - Path: `games/{gameId}/sessions/session-1`
+  - Fields: `name`, `date`, `createdBy`, `noteCount: 0`
+
+---
+
+## 🧠 Current State
+
+- ✅ Firestore is writing correctly
+- ✅ Auto-session creation is working
+- ✅ Structure matches long-term scalable design
+
+---
+
+## 🚧 Next Goals (choose one)
+
+- [ ] List games on the dashboard  
+- [ ] Build `/games/:gameId/sessions` view  
+- [ ] Add Firebase Auth (replace `temp-user-123`)  
+- [ ] Add game members subcollection on join
+
+---
+
