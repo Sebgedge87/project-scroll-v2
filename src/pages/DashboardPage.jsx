@@ -15,16 +15,20 @@ import {
 } from "firebase/firestore"
 import { Link } from "react-router-dom"
 import { signInWithEmailAndPassword } from "firebase/auth"
-import { useAuth } from "../AuthContext"
-import JoinGameForm from "../components/JoinGameForm"
+import JoinGameForm from "../components/JoinGameForm";
+import { signOut } from "firebase/auth";
+import { useAuth } from "../context/AuthContext"
+import { useNavigate } from "react-router-dom"
+
 
 function DashboardPage() {
-  const [title, setTitle] = useState("")
-  const [system, setSystem] = useState("")
-  const [sessionDay, setSessionDay] = useState("")
-  const [sessionTime, setSessionTime] = useState("")
-  const [games, setGames] = useState([])
-  const { user } = useAuth()
+  const [title, setTitle] = useState("");
+  const [system, setSystem] = useState("");
+  const [sessionDay, setSessionDay] = useState("");
+  const [sessionTime, setSessionTime] = useState("");
+  const [games, setGames] = useState([]);
+  const { currentUser: user } = useAuth();
+  const { navigate } = useNavigate();
 
   const handleLogin = async () => {
     try {
@@ -34,6 +38,15 @@ function DashboardPage() {
       console.error("Login error:", err.message)
     }
   }
+
+   const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate ("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
 
   useEffect(() => {
     if (!user) return
@@ -138,8 +151,15 @@ function DashboardPage() {
           Log in as test@email.com
         </button>
       )}
+      
       {user && (
         <div className="space-y-2 max-w-md">
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 text-white"
+          >
+            🔒 Logout
+          </button>
           <h2 className="text-xl font-semibold">🎟️ Join Game by Code</h2>
           <JoinGameForm />
         </div>
@@ -186,16 +206,12 @@ function DashboardPage() {
         <ul className="space-y-2">
           {games.map((game) => (
             <li key={game.id}>
-              <Link
-                to={`/games/${game.id}`}
-                className="block p-4 bg-gray-800 rounded shadow hover:bg-gray-700 transition-all"
-              >
-                <h3 className="text-xl font-bold">{game.title}</h3>
-                <p className="text-sm text-gray-300">System: {game.system}</p>
-                <p className="text-sm text-gray-400">
-                  Session: {game.sessionDay} @ {game.sessionTime}
-                </p>
-              </Link>
+              <Link to={`/games/${game.id}`} className="block p-4 bg-gray-800 rounded">
+  <h3 className="text-xl font-bold">{game.title}</h3>
+  <p className="text-gray-300">System: {game.system}</p>
+  <p className="text-sm text-gray-400">Session: {game.sessionDay} @ {game.sessionTime}</p>
+  <p className="text-xs text-gray-500">ID: {game.id}</p>
+</Link>
             </li>
           ))}
         </ul>
@@ -203,5 +219,6 @@ function DashboardPage() {
     </div>
   )
 }
+
 
 export default DashboardPage

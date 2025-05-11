@@ -60,12 +60,12 @@
 
 ## ⏳ Week Two: User Access & Roles (Preview)
 
-- [ ] Build SessionsPage and /sessions/:sessionId route
-- [ ] Add role-based access: GM vs Player
-- [ ] Restrict create/edit features to GM only
-- [ ] Add real logout and register flow
+- [x] Build SessionsPage and /sessions/:sessionId route
+- [x] Add role-based access: GM vs Player
+- [x] Restrict create/edit features to GM only
+- [x] Add real logout and register flow
 - [ ] Filter shared resources (notes, inventory) by permissions
-- [ ] Show player name in member list
+- [x] Show player name in member list
 
 ---
 
