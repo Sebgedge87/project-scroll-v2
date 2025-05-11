@@ -10,6 +10,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/games/:gameId" element={<GamePage />} />
+        {/* <Route path="/games/:gameId/sessions/:sessionId" element={<SessionsPage />} /> */}
       </Routes>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { db } from "../firebase/config"
+import { auth, db } from "../firebase"
 import {
   addDoc,
   getDoc,
@@ -15,7 +15,6 @@ import {
 } from "firebase/firestore"
 import { Link } from "react-router-dom"
 import { signInWithEmailAndPassword } from "firebase/auth"
-import { auth } from "../firebase/config"
 import { useAuth } from "../AuthContext"
 import JoinGameForm from "../components/JoinGameForm"
 

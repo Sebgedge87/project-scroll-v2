@@ -1,4 +1,4 @@
-import { db } from "../firebase/config";
+import { auth, db } from "../../../firebase";
 import { useEffect, useState } from "react";
 import {
   getDoc,
@@ -14,7 +14,8 @@ function GamePage() {
     const { gameId } = useParams();
     const [game, setGame] = useState(null);
     const [sessions, setSessions] = useState([]);
-  
+   
+
     useEffect(() => {
       const fetchGame = async () => {
         const ref = doc(db, "games", gameId);
