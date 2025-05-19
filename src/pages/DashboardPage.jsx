@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import {
   collection,
+  collectionGroup,
   query,
   where,
   onSnapshot,
@@ -9,30 +10,65 @@ import {
   setDoc,
   doc,
   getDoc,
-  updateDoc,
-  serverTimestamp,
-  arrayUnion,
+  serverTimestamp
 } from "firebase/firestore";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { auth, db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
 
 export default function DashboardPage() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // — Form state —
+  // Auth form state
+  const [isRegister, setIsRegister] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  // Game form state
   const [title, setTitle] = useState("");
   const [system, setSystem] = useState("");
   const [sessionDay, setSessionDay] = useState("");
   const [sessionTime, setSessionTime] = useState("");
   const [joinCode, setJoinCode] = useState("");
 
-  // — Fetched games —
+  // Fetched games
   const [gmGames, setGmGames] = useState([]);
   const [memberGames, setMemberGames] = useState([]);
+
+  // Inline auth handlers
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      if (isRegister) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      // Clear on success
+      setEmail("");
+      setPassword("");
+    } catch (err) {
+      setError(err.message);
+    }
+  };  
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/");
+    } catch {
+      toast.error("Logout failed.");
+    }
+  };
 
   // Subscribe to games you GM
   useEffect(() => {
@@ -43,67 +79,86 @@ export default function DashboardPage() {
     );
     const unsub = onSnapshot(
       q,
-      (snap) => {
-        setGmGames(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      },
-      (err) => {
-        console.error("GM games listener error:", err);
-        toast.error("Could not load your hosted games.");
-      }
+      (snap) => setGmGames(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (err) => toast.error("Could not load your hosted games.")
     );
     return () => unsub();
   }, [currentUser]);
 
-  // Subscribe to games you’re a member of (denormalised)
-  useEffect(() => {
-    if (!currentUser) return;
-    const q = query(
-      collection(db, "games"),
-      where("memberUids", "array-contains", currentUser.uid)
-    );
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setMemberGames(
-          snap.docs
-            .filter((d) => d.data().gmId !== currentUser.uid)
-            .map((d) => ({ id: d.id, ...d.data() }))
-        );
-      },
-      (err) => {
-        console.error("Member games listener error:", err);
-        toast.error("Could not load your joined games.");
-      }
-    );
-    return () => unsub();
-  }, [currentUser]);
+  // Subscribe via the members subcollection
+useEffect(() => {
+  if (!currentUser) return;
 
-  // If not signed in, show test-login screen
+  const q = query(
+    collectionGroup(db, "members"),
+    where("userId", "==", currentUser.uid)
+  );
+
+  const unsub = onSnapshot(
+    q,
+    (snap) => {
+      const games = snap.docs.map((d) => {
+        // d.ref.parent is the members collection,
+        // so parent.parent.id is the gameId
+        const gameId = d.ref.parent.parent.id;
+        return { id: gameId, ...d.data() };
+      });
+      setMemberGames(games);
+    },
+    (err) => {
+      console.error(err);
+      toast.error("Could not load your joined games.");
+    }
+  );
+
+  return () => unsub();
+}, [currentUser]);
+
+  // If not signed in, show inline auth form
   if (!currentUser) {
-    const handleTestLogin = async () => {
-      try {
-        await signInWithEmailAndPassword(auth, "test@email.com", "hunter2");
-        toast.success("Signed in as Test User");
-      } catch (err) {
-        console.error(err);
-        toast.error(
-          err.code === "auth/user-not-found"
-            ? "Test user not found."
-            : err.code === "auth/wrong-password"
-            ? "Wrong password."
-            : "Login failed."
-        );
-      }
-    };
     return (
-      <div className="p-6 bg-gray-900 min-h-screen text-white flex flex-col items-center justify-center">
-        <h2 className="text-3xl mb-4">Welcome to Project Scroll</h2>
-        <button
-          onClick={handleTestLogin}
-          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+      <div className="flex h-screen items-center justify-center bg-gray-900 text-white">
+        <form
+          onSubmit={handleAuthSubmit}
+          className="space-y-4 bg-gray-800 p-6 rounded shadow-md w-full max-w-sm"
         >
-          Log In as Test User
-        </button>
+          <h1 className="text-2xl font-bold">
+            {isRegister ? "Sign Up" : "Log In"}
+          </h1>
+          {error && <p className="text-red-400">{error}</p>}
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-2 rounded bg-gray-700"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-2 rounded bg-gray-700"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+          >
+            {isRegister ? "Sign Up" : "Log In"}
+          </button>
+          <p className="text-sm text-gray-400">
+            {isRegister ? "Already have an account?" : "Need an account?"}{" "}
+            <button
+              type="button"
+              onClick={() => setIsRegister(!isRegister)}
+              className="text-blue-400 underline"
+            >
+              {isRegister ? "Log In" : "Sign Up"}
+            </button>
+          </p>
+        </form>
       </div>
     );
   }
@@ -147,48 +202,31 @@ export default function DashboardPage() {
   };
 
   // Join existing game
-  const handleJoinGame = async (e) => {
-    e.preventDefault();
-    if (!joinCode.trim()) {
-      return toast.error("Enter a game code.");
-    }
-    try {
-      const gameRef = doc(db, "games", joinCode.trim());
-      const snap = await getDoc(gameRef);
-      if (!snap.exists()) {
-        return toast.error("Game not found.");
-      }
-      await setDoc(
-        doc(db, "games", joinCode, "members", currentUser.uid),
-        {
-          userId: currentUser.uid,
-          role: "player",
-          joinedAt: serverTimestamp(),
-          displayName: currentUser.displayName || currentUser.email,
-        }
-      );
-      await updateDoc(gameRef, {
-        memberUids: arrayUnion(currentUser.uid),
-      });
-      toast.success("Joined game!");
-      navigate(`/games/${joinCode}`);
-      setJoinCode("");
-    } catch (err) {
-      console.error("Join game error:", err);
-      toast.error("Failed to join game.");
-    }
-  };
-
-  // Logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success("Logged out");
-      navigate("/");
-    } catch {
-      toast.error("Logout failed.");
-    }
-  };
+ const handleJoinGame = async (e) => {
+  e.preventDefault();
+  if (!joinCode.trim()) {
+    return toast.error("Enter a game code.");
+  }
+  try {
+    await setDoc(
+      doc(db, "games", joinCode.trim(), "members", currentUser.uid),
+      {
+        userId: currentUser.uid,
+        role: "player",
+        joinedAt: serverTimestamp(),
+        displayName: currentUser.displayName || currentUser.email,
+      },
+      { merge: true } // ← treat as create or merge, not an update
+    );
+    
+    toast.success("Joined game!");
+    navigate(`/games/${joinCode.trim()}`);
+    setJoinCode("");
+  } catch (err) {
+    console.error("Join game error:", err);
+    toast.error("Failed to join game.");
+  }
+};
 
   // Merge and dedupe
   const allGames = [...gmGames, ...memberGames];
@@ -256,7 +294,15 @@ export default function DashboardPage() {
             className="flex-1 p-2 rounded bg-gray-700 text-white"
           >
             <option value="">Session Day</option>
-            {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((d) => (
+            {[
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday",
+            ].map((d) => (
               <option key={d}>{d}</option>
             ))}
           </select>

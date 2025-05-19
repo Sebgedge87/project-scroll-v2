@@ -1,8 +1,8 @@
 // src/App.jsx
-import DashboardPage from "./pages/DashboardPage";
-import GamePage from './app/games/[gameId]/index.jsx';
-import SessionsPage from "./pages/SessionsPage";
-import SessionDetailPage from "./pages/SessionDetailPage";
+import DashboardPage      from "./pages/DashboardPage";
+import GamePage           from "./app/games/[gameId]";
+import SessionsPage       from "./app/games/[gameId]/sessions";
+import SessionDetailPage  from "./app/games/[gameId]/sessions/[sessionId]";
 import { Toaster } from "react-hot-toast";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -16,35 +16,37 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="/dashboard" element={<DashboardPage />} />
        
-        <Route
-          path="/games/:gameId"
-          element={
-            <ProtectedRoute>
-              <GamePage />
-            </ProtectedRoute>
-          }
-        />
+       +    <Route
+      path="/games/:gameId"
+      element={
+        <ProtectedRoute>
+          <GamePage />
+        </ProtectedRoute>
+      }
+    >
+      {/* if someone hits /games/123 → redirect them to sessions */}
+      <Route index element={<Navigate to="sessions" replace />} />
 
-      
-        {/* Sessions list */}
-        <Route
-          path="/games/:gameId/sessions"
-          element={
-            <ProtectedRoute>
-              <SessionsPage />
-            </ProtectedRoute>
-          }
-        />
+      {/* /games/:gameId/sessions */}
+      <Route
+        path="sessions"
+        element={
+          <ProtectedRoute>
+            <SessionsPage />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Session detail */}
-        <Route
-          path="/games/:gameId/sessions/:sessionId"
-          element={
-            <ProtectedRoute>
-              <SessionDetailPage />
-            </ProtectedRoute>
-          }
-        />
+      {/* /games/:gameId/sessions/:sessionId */}
+      <Route
+        path="sessions/:sessionId"
+        element={
+          <ProtectedRoute>
+            <SessionDetailPage />
+          </ProtectedRoute>
+        }
+      />
+    </Route>
       </Routes>
     </div>
   );

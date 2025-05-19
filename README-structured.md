@@ -45,6 +45,13 @@ This README includes the current status, development constraints, structure, aud
 
 ---
 
+## Test User Info
+
+- Username: test@email.com
+- PAssword: hunter2
+
+---
+
 ## 📋 Week One Milestones (✅ Completed)
 
 - [x] Project scaffolded with routing and Firebase
