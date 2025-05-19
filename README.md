@@ -1,3 +1,82 @@
+# 🧙‍♂️ Project Scroll – TTRPG Campaign Manager
+
+Project Scroll is a focused, multi-user campaign manager for tabletop RPGs like D&D 5e. It is being built as a learning journey by a developer new to coding, using Firebase and React.
+
+This app follows a strict development roadmap, one scoped feature at a time. Scope creep is **not permitted** unless a feature is broken or critically required.
+
+---
+
+## ⚙️ Tech Stack
+
+- React (Vite)
+- Tailwind CSS (dark mode)
+- Firebase Auth & Firestore
+- React Router v6
+
+---
+
+## ✅ Current Status (End of Week One)
+
+- [x] Project scaffolded and routed
+- [x] Firebase Auth integrated
+- [x] Game creation with gmId
+- [x] Auto-create Session 1
+- [x] Session listing under each game
+- [x] Dashboard filters by GM and joined games
+- [x] Join Game via code
+- [x] File structure refactored:
+  - `pages/` for views
+  - `components/` for UI
+  - `app/games/[gameId]/` for game route
+
+---
+
+## 🚫 Scope Creep Detected
+
+The following files are outside the approved roadmap and should be removed or stashed:
+
+- `src/pages/SignUp.jsx`
+- `src/pages/Login.jsx`
+- `src/pages/NotesPage.jsx`
+- `src/pages/InventoryPage.jsx`
+- `src/pages/SessionDetailPage.jsx` (duplicate or misaligned)
+
+---
+
+## 📍 Next Step: Week Two
+
+- [ ] Add session view at `/games/:gameId/sessions/:sessionId`
+- [ ] Implement GM-only edit/delete logic
+- [ ] Add logout and (if needed) real registration flow
+- [ ] Prepare for session notes and shared tools
+
+---
+
+## 🧠 Bootstrap Prompt for GPT or Future Sessions
+
+```markdown
+Refer to this README for all project context and constraints.
+
+⚠️ Do not introduce scope creep or extra features unless explicitly requested.
+Only help with code that aligns to the structure and goals defined here.
+
+Always validate against `project-scroll-roadmap.md`.
+```
+
+---
+
+## 🗃 Directory Summary (Important)
+
+- `src/pages/` — UI pages (Dashboard, SessionsPage)
+- `src/components/` — reusable components (JoinGameForm)
+- `src/app/games/[gameId]/` — nested game view route (GamePage)
+- `src/firebase/config.js` — Firebase setup
+- `src/AuthContext.jsx` — Auth wrapper and hook
+
+---
+
+---
+
 ## ⚙️ Developer Guidelines for AI Support
 
 - Keep code modular and scoped

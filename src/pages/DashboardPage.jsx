@@ -1,224 +1,296 @@
-import { useEffect, useState } from "react"
-import { auth, db } from "../firebase"
+// src/pages/DashboardPage.jsx
+import { useState, useEffect } from "react";
 import {
-  addDoc,
-  getDoc,
   collection,
-  serverTimestamp,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
   setDoc,
   doc,
-  query,
-  orderBy,
-  onSnapshot,
-  collectionGroup,
-  where
-} from "firebase/firestore"
-import { Link } from "react-router-dom"
-import { signInWithEmailAndPassword } from "firebase/auth"
-import JoinGameForm from "../components/JoinGameForm";
-import { signOut } from "firebase/auth";
-import { useAuth } from "../context/AuthContext"
-import { useNavigate } from "react-router-dom"
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  arrayUnion,
+} from "firebase/firestore";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { auth, db } from "../firebase";
+import { useAuth } from "../context/AuthContext";
 
+export default function DashboardPage() {
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
 
-function DashboardPage() {
+  // — Form state —
   const [title, setTitle] = useState("");
   const [system, setSystem] = useState("");
   const [sessionDay, setSessionDay] = useState("");
   const [sessionTime, setSessionTime] = useState("");
-  const [games, setGames] = useState([]);
-  const { currentUser: user } = useAuth();
-  const { navigate } = useNavigate();
+  const [joinCode, setJoinCode] = useState("");
 
-  const handleLogin = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, "test@email.com", "password123")
-      alert("Logged in!")
-    } catch (err) {
-      console.error("Login error:", err.message)
-    }
+  // — Fetched games —
+  const [gmGames, setGmGames] = useState([]);
+  const [memberGames, setMemberGames] = useState([]);
+
+  // Subscribe to games you GM
+  useEffect(() => {
+    if (!currentUser) return;
+    const q = query(
+      collection(db, "games"),
+      where("gmId", "==", currentUser.uid)
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setGmGames(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      },
+      (err) => {
+        console.error("GM games listener error:", err);
+        toast.error("Could not load your hosted games.");
+      }
+    );
+    return () => unsub();
+  }, [currentUser]);
+
+  // Subscribe to games you’re a member of (denormalised)
+  useEffect(() => {
+    if (!currentUser) return;
+    const q = query(
+      collection(db, "games"),
+      where("memberUids", "array-contains", currentUser.uid)
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setMemberGames(
+          snap.docs
+            .filter((d) => d.data().gmId !== currentUser.uid)
+            .map((d) => ({ id: d.id, ...d.data() }))
+        );
+      },
+      (err) => {
+        console.error("Member games listener error:", err);
+        toast.error("Could not load your joined games.");
+      }
+    );
+    return () => unsub();
+  }, [currentUser]);
+
+  // If not signed in, show test-login screen
+  if (!currentUser) {
+    const handleTestLogin = async () => {
+      try {
+        await signInWithEmailAndPassword(auth, "test@email.com", "hunter2");
+        toast.success("Signed in as Test User");
+      } catch (err) {
+        console.error(err);
+        toast.error(
+          err.code === "auth/user-not-found"
+            ? "Test user not found."
+            : err.code === "auth/wrong-password"
+            ? "Wrong password."
+            : "Login failed."
+        );
+      }
+    };
+    return (
+      <div className="p-6 bg-gray-900 min-h-screen text-white flex flex-col items-center justify-center">
+        <h2 className="text-3xl mb-4">Welcome to Project Scroll</h2>
+        <button
+          onClick={handleTestLogin}
+          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+        >
+          Log In as Test User
+        </button>
+      </div>
+    );
   }
 
-   const handleLogout = async () => {
+  // Create new game
+  const handleCreateGame = async (e) => {
+    e.preventDefault();
+    if (!title || !system || !sessionDay || !sessionTime) {
+      return toast.error("Please fill in all fields.");
+    }
     try {
-      await signOut(auth);
-      navigate ("/login");
+      const gameRef = await addDoc(collection(db, "games"), {
+        title: title.trim(),
+        system: system.trim(),
+        sessionDay,
+        sessionTime,
+        gmId: currentUser.uid,
+        createdAt: serverTimestamp(),
+        memberUids: [currentUser.uid],
+      });
+      await setDoc(
+        doc(db, "games", gameRef.id, "members", currentUser.uid),
+        {
+          userId: currentUser.uid,
+          role: "gm",
+          joinedAt: serverTimestamp(),
+          displayName: currentUser.displayName || currentUser.email,
+        }
+      );
+      toast.success("Game created!");
+      navigate(`/games/${gameRef.id}`);
     } catch (err) {
-      console.error("Logout failed:", err);
+      console.error("Create game error:", err);
+      toast.error("Failed to create game.");
+    } finally {
+      setTitle("");
+      setSystem("");
+      setSessionDay("");
+      setSessionTime("");
     }
   };
 
-  useEffect(() => {
-    if (!user) return
-
-    const fetchGames = async () => {
-      const gmQuery = query(
-        collection(db, "games"),
-        where("gmId", "==", user.uid),
-        orderBy("createdAt", "desc")
-      )
-
-      const unsubscribeGm = onSnapshot(gmQuery, (snapshot) => {
-        const gmGames = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        setGames((prev) => {
-          const ids = new Set(prev.map((g) => g.id))
-          const merged = [...prev, ...gmGames.filter((g) => !ids.has(g.id))]
-          return merged
-        })
-      })
-
-      const unsubscribeMembers = onSnapshot(
-        collectionGroup(db, "members"),
-        async (snapshot) => {
-          const matchingDocs = snapshot.docs.filter((doc) => doc.id === user.uid)
-          const gameIds = matchingDocs.map((doc) => doc.ref.parent.parent.id)
-
-          const joinedGames = await Promise.all(
-            gameIds.map(async (gameId) => {
-              const ref = doc(db, "games", gameId)
-              const snap = await getDoc(ref)
-              return snap.exists() ? { id: snap.id, ...snap.data() } : null
-            })
-          )
-
-          setGames((prev) => {
-            const ids = new Set(prev.map((g) => g.id))
-            const merged = [...prev, ...joinedGames.filter((g) => g && !ids.has(g.id))]
-            return merged
-          })
-        }
-      )
-
-      return () => {
-        unsubscribeGm()
-        unsubscribeMembers()
-      }
+  // Join existing game
+  const handleJoinGame = async (e) => {
+    e.preventDefault();
+    if (!joinCode.trim()) {
+      return toast.error("Enter a game code.");
     }
-
-    fetchGames()
-  }, [user])
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!title || !system || !sessionDay || !sessionTime) {
-      alert("Please fill out all fields.")
-      return
-    }
-
     try {
-      const gameData = {
-        title,
-        system,
-        sessionDay,
-        sessionTime,
-        createdAt: serverTimestamp(),
-        gmId: user?.uid || "unknown",
+      const gameRef = doc(db, "games", joinCode.trim());
+      const snap = await getDoc(gameRef);
+      if (!snap.exists()) {
+        return toast.error("Game not found.");
       }
-
-      const gameRef = await addDoc(collection(db, "games"), gameData)
-
-      const sessionData = {
-        name: "Session 1",
-        date: serverTimestamp(),
-        createdBy: "temp-user-123",
-        noteCount: 0,
-      }
-
-      const sessionRef = doc(db, "games", gameRef.id, "sessions", "session-1")
-      await setDoc(sessionRef, sessionData)
-
-      alert("Game and first session created!")
-      setTitle("")
-      setSystem("")
-      setSessionDay("")
-      setSessionTime("")
+      await setDoc(
+        doc(db, "games", joinCode, "members", currentUser.uid),
+        {
+          userId: currentUser.uid,
+          role: "player",
+          joinedAt: serverTimestamp(),
+          displayName: currentUser.displayName || currentUser.email,
+        }
+      );
+      await updateDoc(gameRef, {
+        memberUids: arrayUnion(currentUser.uid),
+      });
+      toast.success("Joined game!");
+      navigate(`/games/${joinCode}`);
+      setJoinCode("");
     } catch (err) {
-      console.error("Error adding game/session:", err)
+      console.error("Join game error:", err);
+      toast.error("Failed to join game.");
     }
-  }
+  };
+
+  // Logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Logged out");
+      navigate("/");
+    } catch {
+      toast.error("Logout failed.");
+    }
+  };
+
+  // Merge and dedupe
+  const allGames = [...gmGames, ...memberGames];
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-3xl font-bold">📋 Dashboard – List of Games</h1>
-      {!user && (
+    <div className="p-6 bg-gray-900 min-h-screen text-white space-y-8">
+      <header className="flex justify-between items-center">
+        <h1 className="text-4xl font-bold">Your Games</h1>
         <button
-          onClick={handleLogin}
-          className="px-4 py-2 bg-green-600 rounded hover:bg-green-700"
+          onClick={handleLogout}
+          className="px-3 py-1 bg-red-600 rounded hover:bg-red-700"
         >
-          Log in as test@email.com
+          Log Out
         </button>
-      )}
-      
-      {user && (
-        <div className="space-y-2 max-w-md">
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 text-white"
-          >
-            🔒 Logout
-          </button>
-          <h2 className="text-xl font-semibold">🎟️ Join Game by Code</h2>
-          <JoinGameForm />
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-2 max-w-md">
+      </header>
+
+      {/* Join Game */}
+      <form
+        onSubmit={handleJoinGame}
+        className="bg-gray-800 p-4 rounded space-y-2 max-w-md"
+      >
+        <h2 className="text-2xl font-semibold text-yellow-400">
+          🔗 Join Game
+        </h2>
         <input
-          className="w-full p-2 rounded bg-gray-800 text-white"
+          type="text"
+          placeholder="Game Code"
+          value={joinCode}
+          onChange={(e) => setJoinCode(e.target.value)}
+          className="w-full p-2 rounded bg-gray-700 text-white"
+        />
+        <button
+          className="w-full px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+        >
+          Join
+        </button>
+      </form>
+
+      {/* Create Game */}
+      <form
+        onSubmit={handleCreateGame}
+        className="bg-gray-800 p-6 rounded space-y-4 max-w-md"
+      >
+        <h2 className="text-2xl font-semibold text-green-400">
+          ➕ Create New Game
+        </h2>
+        <input
           type="text"
           placeholder="Game Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          className="w-full p-2 rounded bg-gray-700 text-white"
         />
         <input
-          className="w-full p-2 rounded bg-gray-800 text-white"
           type="text"
-          placeholder="System (e.g. 5e, Call of Cthulhu)"
+          placeholder="System (e.g. D&D 5e)"
           value={system}
           onChange={(e) => setSystem(e.target.value)}
+          className="w-full p-2 rounded bg-gray-700 text-white"
         />
-        <input
-          className="w-full p-2 rounded bg-gray-800 text-white"
-          type="text"
-          placeholder="Session Day (e.g. Saturday)"
-          value={sessionDay}
-          onChange={(e) => setSessionDay(e.target.value)}
-        />
-        <input
-          className="w-full p-2 rounded bg-gray-800 text-white"
-          type="time"
-          value={sessionTime}
-          onChange={(e) => setSessionTime(e.target.value)}
-        />
-
+        <div className="flex gap-2">
+          <select
+            value={sessionDay}
+            onChange={(e) => setSessionDay(e.target.value)}
+            className="flex-1 p-2 rounded bg-gray-700 text-white"
+          >
+            <option value="">Session Day</option>
+            {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((d) => (
+              <option key={d}>{d}</option>
+            ))}
+          </select>
+          <input
+            type="time"
+            value={sessionTime}
+            onChange={(e) => setSessionTime(e.target.value)}
+            className="flex-1 p-2 rounded bg-gray-700 text-white"
+          />
+        </div>
         <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+          className="w-full px-4 py-2 bg-green-600 rounded hover:bg-green-700"
         >
           Create Game
         </button>
-        <hr className="my-4 border-gray-700" />
+      </form>
 
-        <h2 className="text-2xl font-semibold mb-2">🎲 My Games</h2>
-
+      {/* Games List */}
+      {allGames.length === 0 ? (
+        <p className="text-gray-400">You have no games yet.</p>
+      ) : (
         <ul className="space-y-2">
-          {games.map((game) => (
-            <li key={game.id}>
-              <Link to={`/games/${game.id}`} className="block p-4 bg-gray-800 rounded">
-  <h3 className="text-xl font-bold">{game.title}</h3>
-  <p className="text-gray-300">System: {game.system}</p>
-  <p className="text-sm text-gray-400">Session: {game.sessionDay} @ {game.sessionTime}</p>
-  <p className="text-xs text-gray-500">ID: {game.id}</p>
-</Link>
+          {allGames.map((g) => (
+            <li key={g.id}>
+              <Link
+                to={`/games/${g.id}`}
+                className="text-blue-400 hover:underline text-xl"
+              >
+                {g.title || `Game ${g.id}`}
+              </Link>
             </li>
           ))}
         </ul>
-      </form>
+      )}
     </div>
-  )
+  );
 }
-
-
-export default DashboardPage
