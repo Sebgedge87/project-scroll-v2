@@ -47,7 +47,7 @@ This README includes the current status, development constraints, structure, aud
 
 ## Test User Info
 
-- Username: test@email.com
+- Username: "<test@email.com>"
 - PAssword: hunter2
 
 ---
@@ -67,7 +67,7 @@ This README includes the current status, development constraints, structure, aud
 
 ## 🧨 Audit Results (as of Week Two Kickoff)
 
-### Files created out of scope:
+### Files created out of scope
 
 - `src/pages/SignUp.jsx` ❌ Not planned
 - `src/pages/Login.jsx` ❌ Redundant (we handled login inline)
@@ -84,6 +84,7 @@ This README includes the current status, development constraints, structure, aud
 | `SessionDetailPage.jsx` | ✅ **Consolidate** with SessionsPage or rename if it's meant to replace it |
 
 Ensure the following are fully working and tested:
+
 - `DashboardPage` and `JoinGameForm`
 - `GamePage` (in `src/app/games/[gameId]`)
 - `SessionsPage` (connected to `/games/:gameId/sessions/:sessionId`)
@@ -114,6 +115,7 @@ Ensure the following are fully working and tested:
 - React Router v6 syntax
 
 ## 📅 Project Scroll – Weekly Development Roadmap
+
 ---
 
 ## ✅ Week One: Foundation & Scaffolding
@@ -129,7 +131,7 @@ Ensure the following are fully working and tested:
 ### 🔐 Authentication
 
 - [x] Enable Firebase Email/Password Auth
-- [x] Add login with hardcoded user (test@email.com)
+- [x] Add login with hardcoded user (<test@email.com>)
 - [x] Track current user globally via AuthContext
 - [x] Save gmId when creating a game
 
@@ -189,4 +191,3 @@ Ensure the following are fully working and tested:
 - [ ] User profiles and avatars
 - [ ] Game invite links with token
 - [ ] Role-based dashboards
-

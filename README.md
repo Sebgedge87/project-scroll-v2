@@ -90,6 +90,7 @@ Always validate against `project-scroll-roadmap.md`.
 - React Router v6 syntax
 
 ## 📅 Project Scroll – Weekly Development Roadmap
+
 ---
 
 ## ✅ Week One: Foundation & Scaffolding
@@ -105,7 +106,7 @@ Always validate against `project-scroll-roadmap.md`.
 ### 🔐 Authentication
 
 - [x] Enable Firebase Email/Password Auth
-- [x] Add login with hardcoded user (test@email.com)
+- [x] Add login with hardcoded user (<test@email.com>)
 - [x] Track current user globally via AuthContext
 - [x] Save gmId when creating a game
 
